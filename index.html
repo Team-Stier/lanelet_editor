@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Lanelet Studio · K-City</title><link rel="stylesheet" href="styles.css"></head>
+<body>
+<header>
+ <a class="brand" href="/" aria-label="Lanelet Studio"><span class="brand-icon">Ⅱ</span><div>LANELET <b>STUDIO</b><small>정밀 지도 편집 · K-City</small></div></a>
+ <div class="project"><span class="live-dot"></span><span id="projectName">kcity_lanelet2</span><span id="dirty" class="badge">불러오는 중</span></div>
+ <div class="header-actions"><button id="openBtn">열기</button><button id="recentBtn" title="저장한 프로젝트 다시 열기">저장 목록</button><button id="saveBtn">프로젝트 저장</button><button id="exportBtn" class="primary">OSM 내보내기 ↗</button><button id="helpBtn" title="도움말">?</button></div>
+</header>
+<main>
+<aside class="left-panel">
+ <section><div class="eyebrow">EXPLORER</div><h2>지도 탐색</h2><form id="searchForm" class="search"><input id="search" placeholder="Lanelet ID / 원본 링크 / 태그 검색" aria-label="지도 검색"><button title="검색">⌕</button></form><div id="searchResults" class="results"></div></section>
+ <section><div class="section-heading"><h3>레이어</h3><span>표시만 변경</span></div>
+ <label class="layer"><input type="checkbox" data-layer="background" checked><span class="swatch image"></span>설치 이미지·도로 에셋</label>
+ <label class="opacity">배경 밝기 <input id="backgroundOpacity" type="range" min="0" max="1" step=".05" value=".75"></label>
+ <label class="layer"><input type="checkbox" data-layer="polygons" checked><span class="swatch polygon"></span>Lanelet 폴리곤</label>
+ <label class="opacity">면 투명도 <input id="polygonOpacity" type="range" min="0" max=".8" step=".02" value=".2"></label>
+ <label class="layer"><input type="checkbox" data-layer="boundaries" checked><span class="swatch line"></span>경계선 · 실선 / 점선</label>
+ <label class="layer"><input type="checkbox" data-layer="stopLines" checked><span class="swatch line" style="border-color:#ffad55"></span>정지선</label>
+ <label class="layer"><input type="checkbox" data-layer="nativeCenters" checked><span class="swatch center" style="border-color:#ff76d5"></span>Lanelet2 중심선</label>
+ <p id="nativeCenterStatus" class="muted tiny" role="status">Lanelet2 중심선 계산 대기</p>
+ <p class="muted tiny">설치된 Lanelet2가 현재 경계 XYZ로 계산합니다. 편집하면 재계산하며, 계산 중·실패 시 이전 결과를 숨깁니다.</p>
+ <label class="layer"><input type="checkbox" data-layer="storedCenters" checked><span class="swatch center" style="border-color:#ff8be5"></span>Lanelet 저장 중심선</label>
+ <p class="muted tiny">저장 중심선은 centerline 구성원이 있는 Lanelet만 표시합니다. 황색 중앙선은 경계선 레이어에 표시됩니다. Shift/Ctrl/⌘+클릭: 다중 선택</p>
+ <label class="layer"><input type="checkbox" data-layer="centerlines"><span class="swatch center"></span>원본 중심선 <small>참고</small></label>
+ <label class="layer"><input type="checkbox" data-layer="derivedCenter"><span class="swatch derived"></span>경계 보간 중심선 <small>참고</small></label>
+ <label class="layer"><input type="checkbox" data-layer="original"><span class="swatch original"></span>원본 차선·정지선</label>
+ <label class="layer"><input type="checkbox" data-layer="vertices"><span class="swatch vertex"></span>경계 꼭짓점</label>
+ <label class="layer"><input type="checkbox" data-layer="connections" checked><span class="swatch arrow">↔</span>선택 Lanelet 연결 관계</label>
+ <p class="muted tiny">초록: 다음 · 파랑: 이전 · 노랑: 좌우 변경 허용 · 빨강 점선: 금지 · 회색 점선: 미확인. 화살표는 연결 관계를 나타내며 주행 궤적이 아닙니다.</p>
+ <label class="layer"><input type="checkbox" data-layer="direction" checked><span class="swatch arrow">→</span>주행 방향</label>
+ <label class="layer"><input type="checkbox" data-layer="labels"><span class="swatch text">#</span>Lanelet ID</label>
+ <label class="layer"><input type="checkbox" data-layer="grid" checked><span class="swatch grid">⌗</span>미터 격자</label>
+ <label class="layer"><input type="checkbox" data-layer="assets" checked><span class="swatch image"></span>실제 도로·차선 메시 <small>3D</small></label>
+ </section>
+ <section><h3>선 종류</h3><div class="legend"><span><i class="solid"></i>실선</span><span><i class="dashed"></i>점선</span><span><i class="yellow"></i>황색 / 중앙선</span><span><i class="virtual"></i>가상 경계</span><span><i class="mixed"></i>복합선</span></div><p class="muted tiny">선의 위치는 실제 좌표입니다. 선 두께·복합선 간격·선택 강조는 화면 심볼입니다. 복합선의 가운데 가는 선이 실제 경계 좌표입니다. 가상 경계는 도색이 없는 지도 경계입니다.</p></section>
+ <section class="checks"><div class="section-heading"><h3>지도 진단</h3><button id="validateBtn" class="small">검사 실행</button></div><p class="muted tiny">누락 참조 · 교차 · 실제 겹침 면적<br>겹침은 교차로에서도 발생하는 기하 사실입니다.</p><div id="validationSummary"></div><div id="diagnosticControls" hidden><select id="issueFilter" aria-label="진단 종류"><option value="all">전체</option><option value="error">오류</option><option value="warning">경고</option><option value="info">겹침·정보</option></select><input id="issueSearch" placeholder="진단 ID / 내용 검색" aria-label="진단 검색"><button id="diagnosticExport" class="small">전체 결과 JSON</button></div><div id="issues" class="results"></div></section>
+ <footer id="mapStats">지도를 준비하고 있습니다…</footer>
+</aside>
+<div class="workspace">
+ <div class="workspace-top"><div class="tool-group" role="toolbar" aria-label="지도 도구"><button data-tool="select" class="active" title="선택 (V)">↖ <span>선택</span></button><button data-tool="vertex" title="점 편집 (E)">◇ <span>점 편집</span></button><button data-tool="draw" title="중심 경로로 Lanelet 생성 (D)">＋ <span>그리기</span></button><button data-tool="measure" title="거리 측정 (M)">↔ <span>측정</span></button></div><div class="tool-group"><button id="undoBtn" title="실행 취소 (⌘Z)">↶</button><button id="redoBtn" title="다시 실행 (⌘⇧Z)">↷</button><span class="divider"></span><button id="fitBtn" title="전체 보기 (F)">⊡</button><button id="view2d" class="active">2D</button><button id="view3d">3D</button></div></div>
+ <div id="viewport" tabindex="0" aria-label="실제 미터 좌표 지도 편집 화면"><canvas id="map"></canvas><div id="three" hidden></div><div class="map-label"><span id="viewLabel">ORTHOGRAPHIC · 1:1 METERS</span><strong id="toolHint">클릭 선택 · Shift/Ctrl/⌘+클릭 다중 선택 · 드래그 이동</strong></div><div id="selectionMenu" hidden></div><div class="map-controls"><button id="zoomIn" title="확대">+</button><button id="zoomOut" title="축소">−</button><button id="northBtn" title="북쪽 위 / 전체 보기">N ↑</button></div><div id="scaleBar"><span></span><b>100 m</b></div><div id="emptyState" class="loading">설치 에셋과 Lanelet 지도를 불러오는 중…</div></div>
+ <div class="workspace-bottom"><label><input type="checkbox" id="snap" title="좌표만 맞춥니다. ID 연결은 점 합치기를 사용하세요."> XY 스냅</label><label><input id="snapDistance" type="number" value=".2" min=".001" step=".05" aria-label="스냅 거리"> m</label><span id="measurement"></span><span class="grow"></span><span id="coordinates">X — / Y — / Z —</span><span class="crs">EPSG:32652</span></div>
+</div>
+<aside class="right-panel">
+ <div class="inspector-heading"><div class="eyebrow">INSPECTOR</div><h2>선택 요소</h2><span id="selectionCount" class="badge">없음</span></div>
+ <div id="inspector"><div class="empty-inspector"><div>⌖</div><h3>지도의 요소를 선택하세요</h3><p>면을 클릭하면 Lanelet,<br>선을 클릭하면 경계,<br>점 편집 모드에서는 꼭짓점을 선택합니다.</p><p>겹친 면은 클릭 후 목록에서 고를 수 있습니다.</p></div></div>
+ <section class="coordinates-note"><h3>좌표 기준</h3><p>로컬 X = UTM East − 302595<br>로컬 Y = UTM North − 4124145<br>Z = 원본 높이 (m)</p><p class="muted tiny">위치 보정·자동 정렬 없음<br>2D는 X/Y 동일 축척 · 3D는 높이 1배<br>원본 높이의 수직 기준은 명시되지 않았습니다.</p></section>
+</aside>
+</main>
+<div id="toast" role="status" hidden></div><input type="file" id="fileInput" accept=".osm,.xml,.json" hidden>
+<dialog id="actionDialog"><form method="dialog" id="actionForm"><div class="dialog-heading"><h2 id="dialogTitle"></h2><button value="cancel" formnovalidate aria-label="닫기">×</button></div><div id="dialogBody"></div><div class="dialog-actions"><button value="cancel" formnovalidate>취소</button><button id="dialogConfirm" value="confirm" class="primary">적용</button></div></form></dialog>
+<dialog id="helpDialog"><div class="dialog-heading"><h2>Lanelet Studio 사용 안내</h2><button id="closeHelp">×</button></div><div class="help-content"><h3>정확하게 보고 편집하기</h3><p>모든 폴리곤과 점은 OSM 로컬 미터 좌표로 표시합니다. 배경도 원본 에셋의 좌표 범위에 고정됩니다. 지도·이미지를 따로 끌어 맞추는 보정은 없습니다. 위성 이미지 자체의 화소·정합 오차는 도로 메시 정밀도와 다릅니다.</p><ul><li><b>V 선택</b> · 드래그 이동, 휠 확대, 클릭 선택. 겹친 면은 선택 목록 표시.</li><li><b>E 점 편집</b> · 점을 끌어 이동. 공유 점은 모든 연결 선이 함께 바뀝니다. 경계 선택 후 선 위 더블클릭으로 점 추가.</li><li><b>D 그리기</b> · 중심 경로를 순서대로 클릭한 뒤 Enter. 입력한 폭으로 새 Lanelet 생성.</li><li><b>M 측정</b> · 연속 클릭 거리 측정. Enter 또는 Esc로 끝내기.</li><li><b>Space 또는 휠 버튼 + 드래그</b> · 모든 2D 도구에서 화면 이동.</li><li><b>⌘/Ctrl Z</b> 실행 취소 · <b>⌘/Ctrl Shift Z</b> 다시 실행 · <b>F</b> 전체 보기 · <b>Esc</b> 선택/작업 취소.</li></ul><h3>연결과 속성</h3><p>분할은 공유 경계 이웃까지 함께 분할하여 같은 선 ID를 유지합니다. 연장은 끝점 ID를 공유하는 새 구간을 만듭니다. 연속 구간 합치기, 기존 경계 way 공유, 점 ID 합치기로 실제 연결도 편집할 수 있습니다. XY 스냅은 위치만 맞추며 ID를 합치지 않습니다. successor는 양쪽 끝점 ID의 일치로, 옆차선은 경계 way ID 공유로 계산합니다. 통행 가능한 차선 변경·교통 규칙 판정은 별도입니다.</p><h3>저장과 내보내기</h3><p>프로젝트 저장은 모든 태그·원본 요소를 포함한 JSON과 OSM을 이 폴더의 saved/에 새 파일로 만듭니다. 브라우저 임시 저장은 복구용입니다. OSM 내보내기는 현재 편집 상태를 다운로드합니다. 기존 src/hdmap의 지도는 편집 중 자동으로 덮어쓰지 않습니다.</p><h3>3D와 진단</h3><p>3D는 원본 높이를 확인하는 보기 모드입니다. 배경 이미지는 Z=0 평면 참조이고 실제 도로 메시에는 원본 높이가 있습니다. 편집은 2D에서 합니다. 경계 보간 중심선은 참고선이며 Lanelet2 native 중심선과 같다고 보장하지 않습니다. 원본 중심선은 편집 후에도 원본 참조로 유지됩니다.</p></div></dialog>
+<script type="module" src="app.js?v=20260928-4"></script>
+</body></html>
